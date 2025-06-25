@@ -13,7 +13,7 @@ Este proyecto consiste en una prueba de integración avanzada de un bot de Whats
 
 Esta integración permite recibir mensajes de WhatsApp, procesarlos mediante Gemini AI y responder automáticamente, facilitando la comunicación y la automatización de tareas desde la aplicación de mensajería.
 
-
+## Para consultas sobre errores frobidden de webook de twilio, visitar https://github.com/twilio/twilio-node/issues/505
 
 ## Pasos para levantar el proyecto
 
