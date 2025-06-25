@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model empresa {
+  id_empresa     Int             @id @default(autoincrement())
+  nombre_empresa String          @db.VarChar(100)
+  direccion      String?         @db.VarChar(100)
+  email          String?         @db.VarChar(100)
+  telefono       String?         @db.VarChar(30)
+  razon_social   String?         @db.VarChar(100)
+  nit            String?         @db.VarChar(30)
+  representante  String?         @db.VarChar(100)
+  estado         Boolean         @default(true)
+  marca          marca[]
+  modelo         modelo[]
+  ruta           ruta[]
+  tipo_servicio  tipo_servicio[]
+  transporte     transporte[]
+  usuario        usuario[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model marca {
+  id_marca     Int          @id @default(autoincrement())
+  nombre_marca String       @db.VarChar(100)
+  descripcion  String?      @db.VarChar(255)
+  id_empresa   Int?
+  empresa      empresa?     @relation(fields: [id_empresa], references: [id_empresa], onUpdate: NoAction, map: "fk_marca_empresa")
+  transporte   transporte[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model modelo {
+  id_modelo     Int          @id @default(autoincrement())
+  nombre_modelo String       @db.VarChar(100)
+  descripcion   String?      @db.VarChar(255)
+  id_empresa    Int?
+  empresa       empresa?     @relation(fields: [id_empresa], references: [id_empresa], onUpdate: NoAction, map: "fk_modelo_empresa")
+  transporte    transporte[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model monitoreo_viaje {
+  id_monitoreo     Int       @id @default(autoincrement())
+  id_usuario       Int?
+  id_viaje         Int?
+  pasajeros        Int?
+  estado_monitoreo String?   @db.VarChar(30)
+  comentarios      String?   @db.VarChar(500)
+  fecha_hora       DateTime? @default(now()) @db.Timestamp(6)
+  usuario          usuario?  @relation(fields: [id_usuario], references: [id_usuario], onUpdate: NoAction, map: "fk_monitoreo_viaje_usuario")
+  viaje            viaje?    @relation(fields: [id_viaje], references: [id_viaje], onUpdate: NoAction, map: "fk_monitoreo_viaje_viaje")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model parada {
+  id_parada     Int           @id @default(autoincrement())
+  nombre_parada String        @db.VarChar(100)
+  descripcion   String?       @db.VarChar(255)
+  linked_map    String?       @db.VarChar(500)
+  estado        Boolean       @default(true)
+  ruta_parada   ruta_parada[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ruta {
+  id_ruta     Int           @id @default(autoincrement())
+  id_empresa  Int?
+  nombre_ruta String        @db.VarChar(100)
+  estado      Boolean       @default(true)
+  empresa     empresa?      @relation(fields: [id_empresa], references: [id_empresa], onUpdate: NoAction, map: "fk_ruta_empresa")
+  ruta_parada ruta_parada[]
+  transporte  transporte[]
+  viaje       viaje[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ruta_parada {
+  id_ruta_parada Int     @id @default(autoincrement())
+  id_ruta        Int?
+  id_parada      Int?
+  tipo_parada    String? @db.VarChar(100)
+  parada         parada? @relation(fields: [id_parada], references: [id_parada], onUpdate: NoAction, map: "fk_ruta_parada_parada")
+  ruta           ruta?   @relation(fields: [id_ruta], references: [id_ruta], onUpdate: NoAction, map: "fk_ruta_parada_ruta")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model suscripcion {
+  id_suscripcion Int       @id @default(autoincrement())
+  nombre         String    @db.VarChar(100)
+  apellido       String    @db.VarChar(100)
+  email          String    @unique(map: "uq_suscripcion_email") @db.VarChar(100)
+  fecha          DateTime? @default(now()) @db.Timestamp(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tipo_servicio {
+  id_tipo_servicio Int          @id @default(autoincrement())
+  nombre           String       @db.VarChar(100)
+  descripcion      String?      @db.VarChar(255)
+  pasaje           Float?
+  id_empresa       Int?
+  empresa          empresa?     @relation(fields: [id_empresa], references: [id_empresa], onUpdate: NoAction, map: "fk_tipo_servicio_empresa")
+  transporte       transporte[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model transporte {
+  id_transporte     Int            @id @default(autoincrement())
+  id_empresa        Int?
+  id_tipo_servicio  Int?
+  id_marca          Int?
+  id_modelo         Int?
+  id_ruta           Int?
+  id_conductor      Int?
+  descripcion       String?        @db.VarChar(255)
+  kilometraje       Float?
+  placa             String         @unique(map: "uq_transporte_placa") @db.VarChar(100)
+  documento         String?        @db.VarChar(255)
+  estado_transporte String?        @db.VarChar(100)
+  capacidad         Int?
+  estado            Boolean        @default(true)
+  usuario           usuario?       @relation(fields: [id_conductor], references: [id_usuario], onUpdate: NoAction, map: "fk_transporte_conductor")
+  empresa           empresa?       @relation(fields: [id_empresa], references: [id_empresa], onUpdate: NoAction, map: "fk_transporte_empresa")
+  marca             marca?         @relation(fields: [id_marca], references: [id_marca], onUpdate: NoAction, map: "fk_transporte_marca")
+  modelo            modelo?        @relation(fields: [id_modelo], references: [id_modelo], onUpdate: NoAction, map: "fk_transporte_modelo")
+  ruta              ruta?          @relation(fields: [id_ruta], references: [id_ruta], onUpdate: NoAction, map: "fk_transporte_ruta")
+  tipo_servicio     tipo_servicio? @relation(fields: [id_tipo_servicio], references: [id_tipo_servicio], onUpdate: NoAction, map: "fk_transporte_tipo_servicio")
+  viaje             viaje[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model usuario {
+  id_usuario      Int               @id @default(autoincrement())
+  id_empresa      Int?
+  nombre          String            @db.VarChar(100)
+  apellido        String            @db.VarChar(100)
+  rol             String            @db.VarChar(100)
+  dui             String?           @db.VarChar(20)
+  telefono        String?           @db.VarChar(100)
+  email           String?           @db.VarChar(100)
+  usuario         String            @unique(map: "uq_usuario_usuario") @db.VarChar(50)
+  contrase_a      String            @map("contraseña") @db.VarChar(100)
+  estado          Boolean           @default(true)
+  monitoreo_viaje monitoreo_viaje[]
+  refresh_tokens  refresh_tokens[]
+  transporte      transporte[]
+  empresa         empresa?          @relation(fields: [id_empresa], references: [id_empresa], onUpdate: NoAction, map: "fk_usuario_empresa")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model viaje {
+  id_viaje          Int               @id @default(autoincrement())
+  id_transporte     Int?
+  id_ruta           Int?
+  estado_viaje      String            @db.VarChar(100)
+  origen            String            @db.VarChar(100)
+  destino           String            @db.VarChar(100)
+  fecha_hora_inicio DateTime?         @db.Timestamp(6)
+  fecha_hora_fin    DateTime?         @db.Timestamp(6)
+  estado            Boolean           @default(true)
+  monitoreo_viaje   monitoreo_viaje[]
+  ruta              ruta?             @relation(fields: [id_ruta], references: [id_ruta], onUpdate: NoAction, map: "fk_viaje_ruta")
+  transporte        transporte?       @relation(fields: [id_transporte], references: [id_transporte], onUpdate: NoAction, map: "fk_viaje_transporte")
+}
+
+model refresh_tokens {
+  id             Int       @id @default(autoincrement())
+  id_usuario     Int
+  token          String    @unique
+  expiracion     DateTime  @db.Timestamp(6)
+  revocado       Boolean?  @default(false)
+  creado_en      DateTime? @default(now()) @db.Timestamp(6)
+  actualizado_en DateTime? @default(now()) @db.Timestamp(6)
+  usuario        usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction, map: "refresh_tokens_usuario_id_fkey")
+}
