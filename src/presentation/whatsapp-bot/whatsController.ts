@@ -11,7 +11,7 @@ export class WhatsController {
 
   public TwilioMessaging = async (req: Request, res: Response) => {
     const twiml = new MessagingResponse();
-    console.log(req.body)
+    console.log(req)
     const incomingMsg = req.body.Body;
     const sender = req.body.From;
 
@@ -21,8 +21,8 @@ export class WhatsController {
       const audioResponse = await axios.get(req.body.MediaUrl0, {
         responseType: 'arraybuffer',
         auth: {
-          username: envs.WHATSAPP_TWILIO_ACCOUNT_SID,
-          password: envs.WHATSAPP_TWILIO_AUTH_TOKEN,
+          username: envs.TWILIO_ACCOUNT_SID,
+          password: envs.TWILIO_AUTH_TOKEN,
         },
       });
       const audioBuffer = Buffer.from(audioResponse.data, "binary");
@@ -40,8 +40,8 @@ export class WhatsController {
       const audioResponse = await axios.get(req.body.MediaUrl0, {
         responseType: 'arraybuffer',
         auth: {
-          username: envs.WHATSAPP_TWILIO_ACCOUNT_SID,
-          password: envs.WHATSAPP_TWILIO_AUTH_TOKEN,
+          username: envs.TWILIO_ACCOUNT_SID,
+          password: envs.TWILIO_AUTH_TOKEN,
         },
       });
       const imageBuffer = Buffer.from(audioResponse.data, "binary");
