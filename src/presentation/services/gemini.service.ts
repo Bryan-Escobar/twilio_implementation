@@ -60,6 +60,17 @@ export class GeminiService {
 
       const response = await this.generateContent(prompt, modelo);
 
+      // Si el modelo decide llamar a una función, la respuesta vendrá en el campo functionCalls
+      if (response.functionCalls && response.functionCalls.length > 0) {
+        const functionCall = response.functionCalls[0];
+        console.log(`Function to call: ${functionCall.name}`);
+        console.log(`Arguments: ${JSON.stringify(functionCall.args)}`);
+
+        if (functionCall.name === "RegistrarGasto") {
+          return await this.procesarRegistroGasto(functionCall.args);
+        }
+      }
+
       const text = response.text;
 
       return text!;
@@ -72,6 +83,77 @@ export class GeminiService {
     }
   };
 
+  static procesarRegistroGasto = async (args: any): Promise<any> => {
+    try {
+      const { nombreGasto, cantidadTotal, fechaEmision, productosAdquiridos } = args as {
+        nombreGasto?: string,
+        cantidadTotal?: number,
+        fechaEmision?: string,
+        productosAdquiridos?: string[]
+      };
+
+      // Validaciones básicas
+      if (!nombreGasto || !cantidadTotal) {
+        return JSON.stringify({
+          success: false,
+          type: "validation_error",
+          message: "Datos incompletos para registrar el gasto",
+          details: {
+            missing_fields: ["nombreGasto", "cantidadTotal"],
+            user_message: "Se requiere el nombre del gasto y la cantidad total para continuar"
+          },
+          data: null
+        });
+      }
+
+      // Preparar la fecha (usar fecha actual si no se proporciona)
+      const fecha = fechaEmision || new Date().toISOString().split('T')[0];
+
+      // Crear el objeto de respuesta con los datos del gasto
+      const gastoRegistrado = {
+        nombreGasto,
+        cantidadTotal,
+        fechaEmision: fecha,
+        productosAdquiridos: productosAdquiridos || [],
+        fechaRegistro: new Date().toISOString()
+      };
+
+      // Aquí podrías agregar lógica para guardar en base de datos
+      // Por ejemplo: await prisma.gasto.create({ data: gastoRegistrado });
+
+      // Retornar respuesta JSON estructurada
+      return ({
+        success: true,
+        type: "expense_registered",
+        message: "Gasto registrado exitosamente",
+        data: {
+          expense: {
+            id: `gasto_${Date.now()}`, // ID temporal hasta que se guarde en BD
+            nombreGasto,
+            cantidadTotal,
+            fechaEmision: fecha,
+            productosAdquiridos: productosAdquiridos || [],
+            fechaRegistro: new Date().toISOString()
+          },
+          summary: {
+            total_formatted: `$${cantidadTotal.toFixed(2)}`,
+            date_formatted: new Date(fecha).toLocaleDateString('es-ES'),
+            products_count: productosAdquiridos ? productosAdquiridos.length : 0,
+            registration_time: new Date().toLocaleString('es-ES')
+          },
+          user_message: `Tu gasto de $${cantidadTotal.toFixed(2)} por "${nombreGasto}" ha sido registrado correctamente.`
+        }
+      });
+
+    } catch (error: any) {
+      console.error("Error al procesar registro de gasto:", error);
+      return `❌ **Error interno del sistema**\n\n` +
+        `🔧 **Motivo:** No se pudo procesar el registro del gasto\n` +
+        `📞 **Acción recomendada:** Intenta nuevamente o contacta soporte técnico\n\n` +
+        `💡 Si el problema persiste, verifica que todos los datos estén correctos.`;
+    }
+  };
+
 
   static generateContent = async (prompt: string, modelo: string = this.modelosSoportados[0]) => {
 
@@ -80,7 +162,9 @@ export class GeminiService {
     let response = await ai.models.generateContent({
       model: modelo.trim(),
       contents: prompt,
-      // Removed tools config since it's not being used and was causing the error
+      config: {
+        tools: [{ functionDeclarations: [registrarGastoFunctionDeclaration] }],
+      }
     });
 
     return response;
